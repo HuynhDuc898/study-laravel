@@ -22,10 +22,10 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::controller(UserController::class)->group(function () {
 
-    Route::get('user/insert','create');
-    Route::get('user/update','update');
+    Route::post('user/insert','create');
+    Route::post('user/update','update');
     Route::get('user/list','list');
-    Route::get('user/delete','delete');
+    Route::post('user/delete','delete');
 });
 
 // Route::get('user/list', [UserController::class, 'list']);

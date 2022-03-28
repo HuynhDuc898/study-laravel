@@ -4,12 +4,24 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Http\Requests\UserRequest;
 
 class UserController extends Controller
 {
-    public function create()
+    public function create(UserRequest $request)
     {
-        $result = User::create(['name' => 'Huynh', 'email' => 'huynhtest@gmail.com', 'password' => bcrypt('123456')]);
+        
+        $data  = $request->safe()->only([
+            'name',
+            'email',
+            'password'
+        ]);
+
+       $data['password'] = bcrypt($data['password']);
+
+        //----create user---------
+        $result = User::create($data);
+        
         return json_encode($result);
     }
 
