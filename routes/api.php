@@ -26,6 +26,7 @@ Route::controller(UserController::class)->group(function () {
     Route::post('user/update','update');
     Route::get('user/list','list');
     Route::post('user/delete','delete');
+    Route::post('user/change/password','changePassword');
 });
 
 // Route::get('user/list', [UserController::class, 'list']);
