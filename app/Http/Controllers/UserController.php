@@ -78,7 +78,7 @@ class UserController extends Controller
 
     public function list()
     {
-        $result = User::get();
+        $result = User::with('role')->get();
         return json_encode($result);
     }
 
