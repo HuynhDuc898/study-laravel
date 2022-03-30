@@ -33,7 +33,8 @@ class UserRequest extends BaseRequest
                                                     ->mixedCase()
                                                     ->numbers()
                                                     ->symbols()
-                                                    ]
+        ],
+            'role_id' => 'required|integer|exists:roles,id'
         ];
     }
 

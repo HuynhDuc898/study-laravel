@@ -23,10 +23,15 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::controller(UserController::class)->group(function () {
 
     Route::post('user/insert','create');
-    Route::post('user/update','update');
-    Route::get('user/list','list');
-    Route::post('user/delete','delete');
-    Route::post('user/change/password','changePassword');
+    Route::post('user/update','update')->middleware('jwt.verify');
+    Route::get('user/list','list')->middleware('jwt.verify');
+    Route::get('user/list/all','listAll')->middleware('jwt.verify');
+    Route::get('user/list/delete','listSoftDelete')->middleware('jwt.verify');
+    Route::post('user/delete','delete')->middleware('jwt.verify');
+    Route::post('user/soft/delete','softDelete')->middleware('jwt.verify');
+    Route::post('user/restore','restore')->middleware('jwt.verify');
+    Route::post('user/change/password','changePassword')->middleware('jwt.verify');
+    Route::post('user/login','login');
 });
 
 // Route::get('user/list', [UserController::class, 'list']);
