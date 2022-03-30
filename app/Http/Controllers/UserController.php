@@ -7,12 +7,17 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
+use Illuminate\Support\Facades\Auth;
 
 use App\Models\User;
+use App\Models\Log;
 
 use App\Http\Requests\UserRequest;
 use App\Http\Requests\ChangePasswordRequest;
-use App\Http\Requests\DeleteUserRequest;
+use App\Http\Requests\DeleteUserRequest; 
+use App\Http\Requests\UpdateUserRequest; 
+use App\Http\Requests\DeleteListUserRequest; 
+use App\Http\Requests\ListUserRequest; 
 
 use App\Mail\RegisterUser;
 use App\Mail\ChangePasswordUser;
@@ -24,21 +29,26 @@ class UserController extends Controller
     //------create use-----------------
     public function create(UserRequest $request)
     {
-        
+        //safe phải có xác thực trong request mới lấy được
         $data  = $request->safe()->only([
-            'name',
+            'first_name',
+            'last_name',
             'email',
             'password',
             'role_id',
+            'options'
         ]);
 
         $data['password'] = $this->setPasswordAttribute($data['password']);
+        // $data['name'] = $data['first_name'].' '.$data['last_name'];
         //----create user---------
         $result = User::create($data);
-
+        // $token = JWTAuth::fromUser($result);​
         //-----send mail------------
         // Mail::to($result->email)->send(new RegisterUser($result));
-        return response()->json($result, 200);
+        
+        // return response()->json(compact('result', 'token'), 200);
+        return response()->json(compact('result'), 200);
     }
 
     //-----hash password--------------
@@ -68,6 +78,11 @@ class UserController extends Controller
         if($user)
         {
             $result = $user->update(['password' => $data['password']]);
+            
+            Log::create([
+                'user_id'   => $user->id,
+                'action'    => 'change_password'
+            ]);
         }
         
         //-----send mail------------
@@ -94,11 +109,20 @@ class UserController extends Controller
             return response()->json(['error' => 'could_not_create_token'], 500);
 
         }
-
+        
+        $user = Auth::user();
+        if($user)
+        {
+            Log::create([
+                'user_id'   => $user->id,
+                'action'    => 'login'
+            ]);
+        }
+        
         return response()->json(compact('token'),200);
     }
 
-
+    //--------------delete restore----------------
     //---------soft delete----------
     public function softDelete(DeleteUserRequest $request)
     {
@@ -154,31 +178,95 @@ class UserController extends Controller
         return response()->json(['not found user'], 200);
     }
 
-    public function update()
+    //------------list delete permanently---------------
+    public function deleteList(DeleteListUserRequest $request)
     {
-        $result = User::where('id', 1)->update(['email' => 'huynhtest1@gmail.com']);
-        return json_encode($result);
+        $data = $request->safe()->only([
+            'id'
+        ]);
+        $result = User::withTrashed()->whereIn('id',$data['id'])->forceDelete();
+        
+        
+        return response()->json(['success'],200);
     }
 
-    //---------------list user not soft delete-------------------
-    public function list()
+    //-----------list soft delete-------------------
+    public function softDeleteList(DeleteListUserRequest $request)
     {
-        $result = User::with('role')->get();
-        return json_encode($result, 200);
+        $data = $request->safe()->only([
+            'id'
+        ]);
+        $result = User::whereIn('id',$data['id'])->delete();
+        
+        
+        return response()->json(['success'],200);
+    }
+
+    //-------end delele and restore-------------
+
+    //------------update user--------
+    public function update(UpdateUserRequest $request)
+    {
+        $data  = $request->safe()->only([
+            'first_name',
+            'last_name',
+            'email',
+            'role_id',
+            'id'
+        ]);
+        $result = User::find($data['id']);
+        
+        $result->update($data);
+        return response()->json([$result], 200);
+    }
+
+    //-----------------list---------------------------
+    //---------------list user not soft delete-------------------
+    public function list(ListUserRequest $request)
+    {
+        $data = $request->safe()->only([
+            'search'
+        ]);
+        $result = User::query();
+        isset($data['search']) ? $result->where('name',"LIKE", "%".$data['search']."%") : '';
+        $result = $result->with('role')->get();
+
+        return response()->json([$result], 200);
     }
 
     //-----------------list all user-----------------------
     public function listAll()
     {
         $result = User::withTrashed()->with('role')->get();
-        return json_encode($result, 200);
+        return response()->json([$result], 200);
     }
 
+    //----------list soft delete--------------
     public function listSoftDelete()
     {
         $result = User::onlyTrashed()->with('role')->get();
-        return json_encode($result, 200);
+        return response()->json([$result], 200);
     }
+
+    //-------end list-----------------
+
+
+    //-----detail user--------------
+    public function detail($id = null)
+    {
+        $result = User::find($id);
+
+        if($result)
+        {
+            // $options = $result->options;
+            // die(json_encode($options));
+            return response()->json([$result], 200);
+        }
+        
+        return response()->json([], 200);
+    }
+
+
 
     
 }

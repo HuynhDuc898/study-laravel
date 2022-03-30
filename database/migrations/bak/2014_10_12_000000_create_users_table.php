@@ -22,6 +22,7 @@ class CreateUsersTable extends Migration
             $table->integer('role_id')->unsigned()->nullable()->default(2);
             $table->string('first_name', 255)->nullable();
             $table->string('last_name', 255)->nullable();
+            $table->text('options')->nullable();
             $table->softDeletes();
             $table->rememberToken();
             $table->timestamps();

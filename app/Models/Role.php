@@ -14,6 +14,11 @@ class Role extends Model
     ];
     protected $primaryKey = 'id';
     protected $table = 'roles';
+
+    protected $casts = [
+        'created_at' => 'datetime:d-M-Y',
+        'updated_at' => 'datetime:d-M-Y',
+    ];
     
 
     public function user()

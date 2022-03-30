@@ -26,7 +26,9 @@ class UserRequest extends BaseRequest
     public function rules()
     {
         return [
-            'name' => 'required|max:255',
+            // 'name' => 'required|max:255',
+            'first_name' => 'required|max:255',
+            'last_name' => 'required|max:255',
             'email' => 'required|email:rfc,dns|unique:users,email|max:255',
             'password' => ['bail','required', 'confirmed', 'max:60', Password::min(8)
                                                     ->letters()
@@ -34,7 +36,8 @@ class UserRequest extends BaseRequest
                                                     ->numbers()
                                                     ->symbols()
         ],
-            'role_id' => 'required|integer|exists:roles,id'
+            'role_id' => 'required|integer|exists:roles,id',
+            'options' => 'nullable'
         ];
     }
 
