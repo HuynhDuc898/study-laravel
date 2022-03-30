@@ -18,6 +18,7 @@ use App\Http\Requests\DeleteUserRequest;
 use App\Http\Requests\UpdateUserRequest; 
 use App\Http\Requests\DeleteListUserRequest; 
 use App\Http\Requests\ListUserRequest; 
+use App\Http\Requests\DeleteListSearchUserRequest; 
 
 use App\Mail\RegisterUser;
 use App\Mail\ChangePasswordUser;
@@ -200,6 +201,19 @@ class UserController extends Controller
         
         
         return response()->json(['success'],200);
+    }
+
+    //---------list soft delete search----------------
+    public function softDeleteSearch(ListUserRequest $request)
+    {
+        $data = $request->safe()->only([
+            'search'
+        ]);
+        $result = User::query();
+        isset($data['search']) ? $result->where('name',"LIKE", "%".$data['search']."%") : '';
+        $result = $result->delete();
+
+        return response()->json([$result], 200);
     }
 
     //-------end delele and restore-------------
