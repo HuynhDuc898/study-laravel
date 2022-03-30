@@ -37,7 +37,8 @@ class UserRequest extends BaseRequest
                                                     ->symbols()
         ],
             'role_id' => 'required|integer|exists:roles,id',
-            'options' => 'nullable'
+            'options' => 'nullable',
+            'avatar'    => 'nullable|mimes:jpg,jpeg,png'
         ];
     }
 

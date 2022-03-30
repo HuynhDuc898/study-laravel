@@ -8,9 +8,11 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use JWTAuth;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 use App\Models\User;
 use App\Models\Log;
+use App\Models\Image;
 
 use App\Http\Requests\UserRequest;
 use App\Http\Requests\ChangePasswordRequest;
@@ -37,11 +39,23 @@ class UserController extends Controller
             'email',
             'password',
             'role_id',
-            'options'
+            'options',
+            'avatar'
         ]);
-
         $data['password'] = $this->setPasswordAttribute($data['password']);
         // $data['name'] = $data['first_name'].' '.$data['last_name'];
+
+        //----------insert avatar-------------
+        if($request->has('avatar'))
+        {
+            $path = Storage::disk('public')->putFile('avatars', $request->file('avatar'));
+            $image = Image::create([
+                'path' => 'storage/'.$path,
+                'type' => 'avatar'
+            ]);
+            $data['avatar_id'] = $image->id;
+        }
+        
         //----create user---------
         $result = User::create($data);
         // $token = JWTAuth::fromUser($result);​

@@ -23,6 +23,7 @@ class CreateUsersTable extends Migration
             $table->string('first_name', 255)->nullable();
             $table->string('last_name', 255)->nullable();
             $table->text('options')->nullable();
+            $table->bigInteger('avatar_id')->unsigned();
             $table->softDeletes();
             $table->rememberToken();
             $table->timestamps();
