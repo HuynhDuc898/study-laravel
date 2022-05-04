@@ -29,14 +29,19 @@ Route::controller(UserController::class)->group(function () {
     Route::get('user/detail/{id?}','detail')->middleware('jwt.verify');
 
     Route::get('user/list','list')->middleware('jwt.verify');
+    // Route::get('user/list','list');
     Route::get('user/list/all','listAll')->middleware('jwt.verify');
     Route::get('user/list/delete','listSoftDelete')->middleware('jwt.verify');
 
     Route::post('user/delete','delete')->middleware('jwt.verify');
-    Route::post('user/soft/delete','softDelete')->middleware('jwt.verify');
+    // Route::post('user/soft/delete','softDelete')->middleware('jwt.verify');
+    Route::post('user/soft/delete','softDelete');
     Route::post('user/soft/delete/list','softDeleteList')->middleware('jwt.verify');
     Route::post('user/soft/delete/search','softDeleteSearch')->middleware('jwt.verify');
     Route::post('user/restore','restore')->middleware('jwt.verify');
+    Route::post('user/dashboard','dashboard')->middleware('jwt.verify');
+    Route::get('user/test/query','testQuery');
+    Route::post('user/test/queue','testQueue');
 
     
 });

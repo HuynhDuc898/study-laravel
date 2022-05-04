@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Hash;
@@ -11,8 +12,10 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 use App\Models\User;
+use App\Models\Role;
 use App\Models\Log;
 use App\Models\Image;
+use DB;
 
 use App\Http\Requests\UserRequest;
 use App\Http\Requests\ChangePasswordRequest;
@@ -25,6 +28,8 @@ use App\Http\Requests\DeleteListSearchUserRequest;
 use App\Mail\RegisterUser;
 use App\Mail\ChangePasswordUser;
 
+use App\Jobs\InsertUser;
+use App\Jobs\InsertUserOptimize;
 
 class UserController extends Controller
 {
@@ -48,14 +53,15 @@ class UserController extends Controller
         //----------insert avatar-------------
         if($request->has('avatar'))
         {
-            $path = Storage::disk('public')->putFile('avatars', $request->file('avatar'));
+            $path = Storage::disk('public')
+                    ->putFile('avatars', $request->file('avatar'));
             $image = Image::create([
                 'path' => 'storage/'.$path,
                 'type' => 'avatar'
             ]);
             $data['avatar_id'] = $image->id;
         }
-        
+
         //----create user---------
         $result = User::create($data);
         // $token = JWTAuth::fromUser($result);​
@@ -165,8 +171,8 @@ class UserController extends Controller
        
         if($result->trashed())
         {
+            
             $result->restore();
-        
             return response()->json(['restore user'], 200);
         }
         
@@ -257,9 +263,8 @@ class UserController extends Controller
         ]);
         $result = User::query();
         isset($data['search']) ? $result->where('name',"LIKE", "%".$data['search']."%") : '';
-        $result = $result->with('role')->get();
-
-        return response()->json([$result], 200);
+        $result = $result->with('role')->limit(20)->get();
+        return response()->json($result, 200);
     }
 
     //-----------------list all user-----------------------
@@ -273,7 +278,7 @@ class UserController extends Controller
     public function listSoftDelete()
     {
         $result = User::onlyTrashed()->with('role')->get();
-        return response()->json([$result], 200);
+        return response()->json($result, 200);
     }
 
     //-------end list-----------------
@@ -291,6 +296,94 @@ class UserController extends Controller
             return response()->json([$result], 200);
         }
         
+        return response()->json([], 200);
+    }
+
+    public function dashboard(Request $request)
+    {
+        $countUser = User::count();
+        $result = [
+            'user' => $countUser
+        ];
+        return response()->json($result, 200);
+    }
+
+    //-------------test query------------
+    public function testQuery(Request $request)
+    {
+        // microtime()
+        $time_start = microtime(true);
+        $data = $request->only('type');
+        switch ($data['type']) {
+            case 1:
+                    //-------------n+1 query--------------
+                    // $result = User::select('id')->limit(100)->get();
+                    $result = User::select(['id', 'role_id'])->limit(10000)->get();
+                    foreach ($result as $key => $value) {
+                        $value['name_role'] = Role::where('id', $value['role_id'])->first()->name;
+                    }
+                    $count = $result->count();
+                break;
+            case 2:
+                
+                    // --------------join-----------------
+                    $result = User::leftJoin('roles', 'roles.id', '=', 'users.role_id')
+                                    ->select(['users.*', 'roles.name as name_role'])
+                                    ->limit(10)
+                                    ->get();
+                    
+                    // $result = DB::table('users')->leftJoin('roles', 'roles.id', '=', 'users.role_id')
+                    // ->select(['users.id', 'users.role_id','roles.name as name_role'])
+                    // // ->limit(100000)
+                    // ->get();
+                    $count = $result->count();
+                break;
+            case 3:
+                DB::enableQueryLog();
+                    //---------------with----------------
+                    $result = User::with('role:id,name')
+                    ->select(['id', 'role_id'])
+                    ->addSelect(DB::raw('1 as number'))
+                    ->limit(10)
+                    ->get();   
+                    $count = $result->count();
+                    dd(DB::getQueryLog());
+                break;
+            default:
+                $result = [];
+                break;
+        }
+        
+        
+        $time_end = microtime(true);
+        $time = ($time_end - $time_start) ;
+        $reponse = [
+            'count' => $count,
+            'time' => $time,
+            'data' => $result
+        ];
+        echo($result);
+        // return response()->json([$reponse], 200);
+    }
+
+
+    //---------------test queue---------------
+    public function testQueue(Request $request)
+    {
+        $data = $request->only('type');
+        switch ($data['type']) {
+            case 1:
+                $result = new InsertUser();
+                dispatch($result);
+                break;
+            case 2:
+                $result = new InsertUserOptimize();
+                dispatch($result);
+                break;
+            default:
+                # code...
+                break;
+        }
         return response()->json([], 200);
     }
 
