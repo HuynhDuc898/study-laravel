@@ -100,6 +100,35 @@ class User extends Authenticatable implements JWTSubject
         return $this->belongsTo(Role::class, 'role_id');
     }
     
+    
+    public function acticles()
+    {
+        return $this->hasMany(Acticle::class, 'writter_id');
+    }
+
+    public function latest_acticle()
+    {
+        return $this->hasOne('App\Models\Acticle', 'writter_id', 'id')->latest();
+    }
+
+    public function first_acticle()
+    {
+        return $this->belongsTo(Acticle::class);
+    }
+
+
+    public function scopeWithLatestComment($query)
+    {
+        $query->addSelect([
+            'first_acticle_id' => Acticle::select('id')
+                ->whereColumn('writter_id', 'users.id')
+                ->orderBy('created_at', 'desc')
+                ->take(1)
+        ])
+        ->with('first_acticle')
+        ;
+    }
+
 
      /**
      * Get the identifier that will be stored in the subject claim of the JWT.

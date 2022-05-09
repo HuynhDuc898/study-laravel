@@ -24,9 +24,9 @@ class BaseRequest extends FormRequest
         ];
 
         throw new HttpResponseException(
-            response()->json([
+            response()->json(
                $response
-            ], JsonResponse::HTTP_OK)
+            , JsonResponse::HTTP_OK)
         );
         
     }

@@ -19,14 +19,21 @@ class UserSeeder extends Seeder
     {
         $data = [];
         for ($i=0; $i < 1000 ; $i++) { 
+            // $data[] = [
+            //     'name' => Str::random(10),
+            //     'email' => Str::random(10).'_'.uniqid().'@gmail.com',
+            //     'password' => Hash::make('12345678aA@'),
+            //     'role_id' => 1
+            // ];
+
             $data[] = [
                 'name' => Str::random(10),
-                'email' => Str::random(10).'_'.uniqid().'@gmail.com',
-                'password' => Hash::make('12345678aA@'),
-                'role_id' => 1
+                'content' => Str::random(10),
+                'writter_id' => rand(1,100),
             ];
         }
         
-        DB::table('users')->insert($data);
+        // DB::table('users')->insert($data);
+        DB::table('acticles')->insert($data);
     }
 }

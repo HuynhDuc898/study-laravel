@@ -10,11 +10,14 @@ use Illuminate\Support\Facades\Validator;
 use JWTAuth;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Http\JsonResponse;
 
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Log;
 use App\Models\Image;
+use App\Models\Acticle;
 use DB;
 
 use App\Http\Requests\UserRequest;
@@ -51,16 +54,16 @@ class UserController extends Controller
         // $data['name'] = $data['first_name'].' '.$data['last_name'];
 
         //----------insert avatar-------------
-        if($request->has('avatar'))
-        {
-            $path = Storage::disk('public')
-                    ->putFile('avatars', $request->file('avatar'));
-            $image = Image::create([
-                'path' => 'storage/'.$path,
-                'type' => 'avatar'
-            ]);
-            $data['avatar_id'] = $image->id;
-        }
+        // if($request->has('avatar'))
+        // {
+        //     $path = Storage::disk('public')
+        //             ->putFile('avatars', $request->file('avatar'));
+        //     $image = Image::create([
+        //         'path' => 'storage/'.$path,
+        //         'type' => 'avatar'
+        //     ]);
+        //     $data['avatar_id'] = $image->id;
+        // }
 
         //----create user---------
         $result = User::create($data);
@@ -69,7 +72,11 @@ class UserController extends Controller
         // Mail::to($result->email)->send(new RegisterUser($result));
         
         // return response()->json(compact('result', 'token'), 200);
-        return response()->json(compact('result'), 200);
+        
+        return response()->json([
+            'status' => JsonResponse::HTTP_OK,
+            'body'  => $result
+        ], 200);
     }
 
     //-----hash password--------------
@@ -311,6 +318,7 @@ class UserController extends Controller
     //-------------test query------------
     public function testQuery(Request $request)
     {
+
         // microtime()
         $time_start = microtime(true);
         $data = $request->only('type');
@@ -327,9 +335,12 @@ class UserController extends Controller
             case 2:
                 
                     // --------------join-----------------
-                    $result = User::leftJoin('roles', 'roles.id', '=', 'users.role_id')
-                                    ->select(['users.*', 'roles.name as name_role'])
-                                    ->limit(10)
+                    $result = User::addSelect(['name_role_1' => Role::select('name as name_role')
+                    ->whereColumn('id', 'users.role_id')
+                    ->limit(1)
+                    ])
+                                    // ->select(['users.*', 'roles.name as name_role'])
+                                    ->limit(10000)
                                     ->get();
                     
                     // $result = DB::table('users')->leftJoin('roles', 'roles.id', '=', 'users.role_id')
@@ -339,29 +350,40 @@ class UserController extends Controller
                     $count = $result->count();
                 break;
             case 3:
-                DB::enableQueryLog();
-                    //---------------with----------------
-                    $result = User::with('role:id,name')
-                    ->select(['id', 'role_id'])
-                    ->addSelect(DB::raw('1 as number'))
-                    ->limit(10)
-                    ->get();   
-                    $count = $result->count();
-                    dd(DB::getQueryLog());
+                   
+
+                    $result = User::
+                    limit(50)
+                    ->get();
+                    foreach ($result as $key => $value) {
+                        $value->acticles->sortByDesc('created_at')->first();
+                    }
+
+                    // $count = $result->count();
                 break;
+                case 4:
+                    $result = User::
+            
+                    with('latest_acticle')
+                    ->limit(50)
+                    ->get();
+                    // $count = $result->count();
+                    break;
+                case 5:
+                    $result = User::
+                    withLatestComment()
+                    ->limit(50)
+                    ->get();  
+
+                    // $count = $result->count();
+                    break;
             default:
                 $result = [];
                 break;
         }
         
         
-        $time_end = microtime(true);
-        $time = ($time_end - $time_start) ;
-        $reponse = [
-            'count' => $count,
-            'time' => $time,
-            'data' => $result
-        ];
+        
         echo($result);
         // return response()->json([$reponse], 200);
     }
